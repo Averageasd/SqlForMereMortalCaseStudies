@@ -115,20 +115,14 @@ INNER JOIN [SchoolSchedulingExample].[dbo].Classes cl
 ON stu_schedule.ClassID = cl.ClassID
 WHERE stu_schedule.ClassStatus = 1;
 
---6./Show me the students who have a grade of 85 or better in art and who also
-SELECT 
-*
-FROM 
+--6./Show me the students who have a grade of 85 or better in art and who also have a grade of 85 or better in cs
+WITH CsStu AS 
 (
 	SELECT 
-	Art_Stu.StudentName,
-	Art_Stu.Grade artGrade, 
-	CS_Student.Grade csGrade FROM (
-	SELECT 
 	CONCAT(stu.StudFirstName,' ',stu.StudLastName) AS StudentName,
-	cl.ClassID,
-	stu_schedule.Grade,
-	cl.SubjectID
+	cl.ClassID csClass,
+	stu_schedule.Grade csGrade,
+	cl.SubjectID csSubject
 	FROM [SchoolSchedulingExample].[dbo].Students stu
 	INNER JOIN [SchoolSchedulingExample].[dbo].Student_Schedules stu_schedule
 	ON stu.StudentID = stu_schedule.StudentID
@@ -138,25 +132,39 @@ FROM
 		(
 		SELECT sub.SubjectID FROM [SchoolSchedulingExample].[dbo].Subjects sub WHERE sub.CategoryID IN ('CSC', 'CIS')
 		)
-	AND stu_schedule.Grade >= 85) Art_Stu 
-	INNER JOIN 
-	(
-	SELECT 
+	AND stu_schedule.Grade >= 85
+),
+ArtStu AS 
+(
+SELECT 
 	CONCAT(stu.StudFirstName,' ',stu.StudLastName) AS StudentName,
-	cl.ClassID,
-	stu_schedule.Grade,
-	cl.SubjectID
+	cl.ClassID artClass,
+	stu_schedule.Grade artGrade,
+	cl.SubjectID artSubject
 	FROM [SchoolSchedulingExample].[dbo].Students stu
 	INNER JOIN [SchoolSchedulingExample].[dbo].Student_Schedules stu_schedule
 	ON stu.StudentID = stu_schedule.StudentID
 	INNER JOIN [SchoolSchedulingExample].[dbo].Classes cl
 	ON stu_schedule.ClassID = cl.ClassID
-	AND cl.SubjectID IN 
+	WHERE cl.SubjectID IN
 		(
-		SELECT sub.SubjectID FROM [SchoolSchedulingExample].[dbo].Subjects sub WHERE sub.CategoryID = 'ART'
-		) AND stu_schedule.Grade >= 85) CS_Student
-			ON Art_Stu.StudentName = CS_Student.StudentName 
-) AS alias_table;
+		SELECT sub.SubjectID FROM [SchoolSchedulingExample].[dbo].Subjects sub WHERE sub.CategoryID IN ('ART')
+		)
+	AND stu_schedule.Grade >= 85
+),
+ArtCsStu AS 
+(
+	SELECT 
+	CsStu.StudentName, 
+	CsStu.csGrade, 
+	CsStu.csClass,
+	ArtStu.artGrade,
+	ArtStu.artClass
+	FROM CsStu
+	INNER JOIN ArtStu
+	ON CsStu.StudentName = ArtStu.StudentName
+)
+SELECT * FROM ArtCsStu;
 
 --7./Display the bowlers, the matches they played in, and the bowler game
 --scores.
@@ -240,3 +248,58 @@ SELECT ingreName1, ingreName2, meas.MeasurementDescription FROM
 ON ingre_meas.measureId = meas.MeasureAmountID
 WHERE ingreName1!=ingreName2
 ORDER BY MeasurementDescription;
+
+--11./Show me the recipes that have beef and garlic
+SELECT * FROM [RecipesExample].[dbo].Ingredients;
+SELECT TOP 1 * FROM [RecipesExample].[dbo].Recipe_Ingredients;
+
+WITH Beef_Ingres
+AS 
+(
+	SELECT ingre.IngredientID beefIngreId
+	FROM 
+	[RecipesExample].[dbo].Ingredients ingre
+	WHERE ingre.IngredientName = 'Beef'
+),
+Garlic_Ingres
+AS 
+(
+	SELECT ingre.IngredientID garlicIngreId
+	FROM 
+	[RecipesExample].[dbo].Ingredients ingre
+	WHERE ingre.IngredientName = 'Garlic'
+),
+Beef_Recs
+AS 
+(
+	SELECT recs.RecipeID beefRecId FROM
+	[RecipesExample].[dbo].Recipe_Ingredients recs
+	INNER JOIN
+	Beef_Ingres beef_ingres
+	ON recs.IngredientID = beef_ingres.beefIngreId
+),
+Garlic_Recs
+AS 
+(
+	SELECT recs.RecipeID garlicRecId FROM
+	[RecipesExample].[dbo].Recipe_Ingredients recs
+	INNER JOIN
+	Garlic_Ingres garlic_ingres
+	ON recs.IngredientID = garlic_ingres.garlicIngreId
+),
+Garlic_Beef_Recs
+AS
+(
+	SELECT beef_recs.beefRecId FROM Beef_Recs beef_recs
+	INNER JOIN Garlic_Recs garlic_recs
+	ON beef_recs.beefRecId = garlic_recs.garlicRecId
+)
+
+SELECT recs.RecipeID, recs.RecipeTitle, recs.Preparation FROM 
+Garlic_Beef_Recs gb_recs
+INNER JOIN
+[RecipesExample].[dbo].Recipes recs
+ON gb_recs.beefRecId = recs.RecipeID;
+
+SELECT * FROM
+[RecipesExample].[dbo].CH08_Beef_And_Garlic_Recipes;
