@@ -228,3 +228,158 @@ LEFT JOIN
 [EntertainmentAgencyExample].[dbo].Engagements eng
 ON ag.AgentID = eng.AgentID
 WHERE eng.EngagementNumber IS NULL;
+
+--14./List customers with no bookings
+SELECT 
+c.CustomerID,
+CONCAT(c.CustFirstName,' ',c.CustLastName) as 'Customer Name No Booking'
+FROM 
+[EntertainmentAgencyExample].[dbo].Customers c
+LEFT JOIN
+[EntertainmentAgencyExample].[dbo].Engagements eng
+ON c.CustomerID = eng.CustomerID
+WHERE eng.EngagementNumber IS NULL;
+
+--15./List all entertainers and any engagements they have booked
+SELECT 
+ent.EntertainerID,
+ent.EntStageName,
+eng.EngagementNumber, 
+eng.StartDate
+FROM 
+[EntertainmentAgencyExample].[dbo].Entertainers ent
+LEFT JOIN
+[EntertainmentAgencyExample].[dbo].Engagements eng
+ON ent.EntertainerID = eng.EntertainerID
+ORDER BY eng.EngagementNumber;
+
+--16./Show me classes that have no students enrolled
+SELECT * FROM [SchoolSchedulingExample].[dbo].Students;
+SELECT * FROM [SchoolSchedulingExample].[dbo].Student_Schedules;
+SELECT * FROM [SchoolSchedulingExample].[dbo].Student_Class_Status;
+
+SELECT 
+classes.ClassID, 
+classes.ClassRoomID 
+FROM
+[SchoolSchedulingExample].[dbo].Classes classes
+LEFT JOIN
+(
+SELECT 
+stu_sc.ClassID, stu_sc.ClassStatus
+FROM 
+[SchoolSchedulingExample].[dbo].Classes cl
+INNER JOIN
+[SchoolSchedulingExample].[dbo].Student_Schedules stu_sc
+ON cl.ClassID = stu_sc.ClassID 
+WHERE stu_sc.ClassStatus = 1
+) inner_cl ON classes.ClassID = inner_cl.ClassID
+WHERE inner_cl.ClassID IS NULL
+ORDER BY classes.ClassID;
+
+--17./Display subjects with no faculty assigned
+SELECT 
+sub.SubjectID,
+sub.SubjectName,
+sub.SubjectCode
+FROM 
+[SchoolSchedulingExample].[dbo].Subjects sub
+LEFT JOIN 
+[SchoolSchedulingExample].[dbo].Faculty_Subjects fal_sub
+ON sub.SubjectID = fal_sub.SubjectID
+WHERE fal_sub.SubjectID IS NULL;
+
+--18./ List students not currently enrolled in any classes.
+SELECT 
+stu.StudentID,
+stu.StudFirstName,
+stu.StudLastName
+FROM
+[SchoolSchedulingExample].[dbo].Students stu
+LEFT JOIN
+(
+SELECT stu.StudentID innerStuID FROM
+[SchoolSchedulingExample].[dbo].Students stu
+INNER JOIN
+[SchoolSchedulingExample].[dbo].Student_Schedules stu_sc
+ON stu.StudentID = stu_sc.StudentID
+WHERE stu_sc.ClassStatus = 1
+) innerStu
+ON stu.StudentID = innerStu.innerStuID
+WHERE innerStu.innerStuID IS NULL;
+
+--19./Display all faculty and the classes they are scheduled to teach
+SELECT 
+st.StaffID,
+st.StfFirstName,
+st.StfLastname,
+inner_cl.ClassID
+FROM [SchoolSchedulingExample].[dbo].Staff st
+LEFT JOIN
+(
+SELECT 
+fal_cl.StaffID, 
+fal_cl.ClassID 
+FROM
+[SchoolSchedulingExample].[dbo].Classes cl
+INNER JOIN
+[SchoolSchedulingExample].[dbo].Faculty_Classes fal_cl
+ON cl.ClassID = fal_cl.ClassID
+) inner_cl
+ON st.StaffID = inner_cl.StaffID
+ORDER BY st.StaffID;
+
+--20./Display matches with no game data.
+SELECT 
+tm.MatchID,
+tm.TourneyID,
+tm.Lanes,
+tm.OddLaneTeamID,
+tm.EvenLaneTeamID
+FROM [BowlingLeagueExample].[dbo].Tourney_Matches tm
+LEFT JOIN
+[BowlingLeagueExample].[dbo].Match_Games mg
+ON tm.MatchID = mg.MatchID
+WHERE mg.GameNumber IS NULL;
+
+--21./Display all tournaments and any matches that have been played.
+SELECT 
+tou.TourneyID,
+tou.TourneyLocation, 
+tou.TourneyDate,
+inner_tm.MatchID
+FROM
+[BowlingLeagueExample].[dbo].Tournaments tou
+LEFT JOIN 
+(
+SELECT tou_m.TourneyID, mg.MatchID FROM
+[BowlingLeagueExample].[dbo].Match_Games mg 
+INNER JOIN
+[BowlingLeagueExample].[dbo].Tourney_Matches tou_m
+ON mg.MatchID = tou_m.MatchID) inner_tm
+ON tou.TourneyID = inner_tm.TourneyID;
+
+--22./Display missing types of recipes.
+SELECT rc.RecipeClassID, rc.RecipeClassDescription
+FROM 
+[RecipesExample].[dbo].Recipe_Classes rc
+LEFT JOIN
+[RecipesExample].[dbo].Recipes r
+ON rc.RecipeClassID = r.RecipeClassID
+WHERE r.RecipeID IS NULL;
+
+--23./List the salad, soup, and main course categories and any recipes.
+SELECT 
+rc.RecipeClassID,
+rc.RecipeClassDescription,
+r.RecipeID,
+r.RecipeTitle
+FROM 
+[RecipesExample].[dbo].Recipe_Classes rc
+LEFT JOIN
+[RecipesExample].[dbo].Recipes r
+ON rc.RecipeClassID = r.RecipeClassID
+WHERE rc.RecipeClassDescription IN ('Main Course', 'Salad', 'Soup');
+
+
+
