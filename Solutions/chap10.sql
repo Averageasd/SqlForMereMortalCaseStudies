@@ -189,3 +189,44 @@ SELECT
 FROM
 staff_art
 ;
+
+--7./List the customers who ordered a helmet together with the vendors who
+--provide helmets
+WITH cus_helments
+AS
+(
+	SELECT 
+	CONCAT(c.CustFirstName,' ',c.CustLastName) as custName,
+	prod.ProductName,
+	'Customer' AS entityRole
+	FROM 
+	[SalesOrdersExample].[dbo].Customers c
+	INNER JOIN
+	[SalesOrdersExample].[dbo].Orders ord
+	ON c.CustomerID = ord.CustomerID
+	INNER JOIN
+	[SalesOrdersExample].[dbo].Order_Details ord_de
+	ON ord.OrderNumber = ord_de.OrderNumber
+	INNER JOIN
+	[SalesOrdersExample].[dbo].Products prod
+	ON ord_de.ProductNumber = prod.ProductNumber
+	WHERE prod.ProductName LIKE '%helmet%'
+),
+vend_helmets AS
+(
+	SELECT 
+	v.VendName as vendName,
+	prod.ProductName,
+	'Vendor' AS entityRole
+	FROM 
+	[SalesOrdersExample].[dbo].Vendors v
+	INNER JOIN
+	[SalesOrdersExample].[dbo].Product_Vendors prod_v
+	ON v.VendorID = prod_v.VendorID
+	INNER JOIN
+	[SalesOrdersExample].[dbo].Products prod
+	ON prod_v.ProductNumber = prod.ProductNumber
+	WHERE prod.ProductName LIKE '%helmet%'
+)
+
+SELECT * FROM cus_helments UNION SELECT * FROM vend_helmets;
