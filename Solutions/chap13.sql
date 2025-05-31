@@ -117,5 +117,7 @@ FROM [RecipesExample].[dbo].Recipe_Classes rec_cl
 INNER JOIN
 [RecipesExample].[dbo].Recipes rec
 ON rec_cl.RecipeClassID = rec.RecipeClassID
-GROUP BY rec_cl.RecipeClassID, rec_cl.RecipeClassDescription
+GROUP BY 
+rec_cl.RecipeClassID, 
+rec_cl.RecipeClassDescription
 HAVING COUNT(rec.RecipeID) >=2;
