@@ -92,21 +92,32 @@ GROUP BY st.StaffID, st.StfFirstName, st.StfLastname
 
 --Sum the amount of salt by recipe class, and display those recipe classes that
 --require more than 3 teaspoons.
-SELECT * FROM [RecipesExample].[dbo].Ingredients ing ORDER BY ing.IngredientName;
 SELECT 
-reci_cl.RecipeClassID, 
-COUNT(ing.MeasureAmountID) tea_spoon_count,
-(
-	SELECT	COUNT(*) FROM [RecipesExample].[dbo].Ingredients inner_ing WHERE inner_ing.IngredientName = 'Salt' AND inner_ing.IngredientClassID = reci_cl.RecipeClassID
-) AS count_salt,
-reci_cl.RecipeClassDescription
-FROM [RecipesExample].[dbo].Recipe_Classes reci_cl
-INNER JOIN 
-[RecipesExample].[dbo].Ingredients ing
-ON reci_cl.RecipeClassID = ing.IngredientClassID 
-WHERE MeasureAmountID = 3
-GROUP BY reci_cl.RecipeClassID, reci_cl.RecipeClassDescription
-HAVING COUNT(ing.MeasureAmountID) > 3;
+rec_cl.RecipeClassID,
+rec_cl.RecipeClassDescription,
+COUNT(rec_ing.MeasureAmountID) tea_spoon_count,
+SUM(rec_ing.Amount) sum_teaspoon_salt
+FROM [RecipesExample].[dbo].Recipe_Classes rec_cl
+INNER JOIN
+[RecipesExample].[dbo].Recipes r
+ON rec_cl.RecipeClassID = r.RecipeClassID
+INNER JOIN
+[RecipesExample].[dbo].Recipe_Ingredients rec_ing
+ON r.RecipeID = rec_ing.RecipeID
+WHERE rec_ing.MeasureAmountID = 3 AND rec_ing.IngredientID = 11
+GROUP BY rec_cl.RecipeClassID, rec_cl.RecipeClassDescription
+HAVING COUNT(rec_ing.MeasureAmountID) > 3;
 
-SELECT * FROM[RecipesExample].[dbo].Recipe_Ingredients;
-SELECT * FROM [RecipesExample].[dbo].CH14_Recipe_Classes_Lots_Of_Salt;
+--For what class of recipe do I have two or more recipes?
+SELECT 
+rec_cl.RecipeClassID,
+rec_cl.RecipeClassDescription,
+COUNT(rec.RecipeID) recipe_count
+FROM [RecipesExample].[dbo].Recipe_Classes rec_cl
+INNER JOIN
+[RecipesExample].[dbo].Recipes rec
+ON rec_cl.RecipeClassID = rec.RecipeClassID
+GROUP BY 
+rec_cl.RecipeClassID, 
+rec_cl.RecipeClassDescription
+HAVING COUNT(rec.RecipeID) >=2;
